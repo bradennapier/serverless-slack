@@ -1,0 +1,11 @@
+{
+  "name": "aws-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "aws-lambda-runner": "^2.5.4",
+    "aws-sdk": "^2.432.0"
+  }
+}

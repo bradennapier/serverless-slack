@@ -1,0 +1,62 @@
+# This is the core serverless configuration.  All packages will inherit from this
+# configuration thanks to serverless-plugin-parent https://github.com/aronim/serverless-plugin-parent
+#
+# This is used largely for common variable sharing rather than actual configuration.  
+custom:
+  env:
+    stage: ${opt:stage, 'development'}
+  warmup:
+    es6: true # build as es6 module
+    prewarm: true # run on deploy
+  aws:
+    region: "us-east-1"
+  webpack:
+    packager: "yarn"
+    webpackConfig: "../dev/webpack/webpack.config.js"
+    includeModules:
+      forceExclude:
+        - "aws-sdk"
+        - "source-map-support"
+  queues:
+    slack_worker_queue_name: ${self:custom.env.stage}-slack-worker
+    slack_worker_dlq_name: ${self:custom.env.stage}-slack-dlq
+  services:
+    db:
+      acl:
+        name: ${self:custom.env.stage}-BotACL
+  prune:
+    automatic: true # Automatically prune and maintain the last 5 versions of every function.
+    number: 10 # This allows us to rollback if necessary.
+
+# Using the Serverless CLI tool, you can package your project without deploying it to AWS.
+# This is best used with CI / CD workflows to ensure consistent deployable artifacts.
+#
+# Reference: https://serverless.com/framework/docs/providers/aws/guide/packaging/
+package:
+  # package each function by itself without this feature 
+  # we lose benefit of webpack tree-shaking
+  individually: true 
+    
+provider:
+  name: aws
+  runtime: nodejs8.10
+  profile: idex:services
+  region: ${self:custom.aws.region}
+  versionFunctions: true
+  timeout: 15
+  environment:
+    NODE_ENV: production
+    APP_STAGE: ${self:custom.env.stage}
+    DB_TABLE_ACL_NAME: ${self:custom.services.db.acl.name}
+  iamRoleStatements:
+    - Effect: Allow
+      Resource: "*"
+      Action:
+        - ec2:CreateNetworkInterface
+        - ec2:DescribeNetworkInterfaces
+        - ec2:DeleteNetworkInterface
+        - secretsmanager:GetSecretValue
+        - lambda:InvokeFunction
+        - lambda:InvokeAsync
+        - sns:*
+        - sqs:*

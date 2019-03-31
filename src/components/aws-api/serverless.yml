@@ -1,0 +1,59 @@
+service: bot-api
+
+# Add the serverless-webpack plugin
+plugins:
+  - serverless-plugin-parent
+  - serverless-prune-plugin
+  - serverless-webpack
+
+provider:
+  name: aws
+  environment:
+    WORKER_QUEUE_URL:
+      Ref: WorkerQueue
+
+resources:
+  Resources:
+    # Our main SQS Queue which will execute our worker function
+    # when jobs are pushed into it.
+    WorkerQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.queues.slack_worker_queue_name}
+        MessageRetentionPeriod: 600
+        VisibilityTimeout: 65
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt: [WorkerDeadLetterQueue, Arn]
+          maxReceiveCount: 5
+    # Since jobs are executed using async, we need a DLQ so jobs
+    # do not infinitely loop when a failure occurs on the worker.
+    WorkerDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 120
+        QueueName: ${self:custom.queues.slack_worker_dlq_name}
+        MessageRetentionPeriod: 600
+
+functions:
+  webhook:
+    handler: functions/webhook/webhook.default
+    timeout: 15
+    events:
+      - http:
+          method: any
+          path: webhook
+  message:
+    handler: functions/message/message.default
+    timeout: 10
+    events:
+      - http:
+          method: any
+          path: message
+  worker:
+    handler: functions/worker/worker.default
+    timeout: 120
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: [WorkerQueue, Arn]
