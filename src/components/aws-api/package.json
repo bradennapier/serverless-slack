@@ -6,6 +6,6 @@
   "private": true,
   "dependencies": {
     "aws-lambda-runner": "^2.5.4",
-    "aws-sdk": "^2.432.0"
+    "aws-sdk": "^2.814.0"
   }
 }
