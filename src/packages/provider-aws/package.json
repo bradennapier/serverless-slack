@@ -4,8 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "^2.432.0",
-    "lodash": "^4.17.11",
+    "aws-sdk": "^2.814.0",
+    "lodash": "^4.17.21",
     "serverless-sqs-client": "^1.0.0"
   }
 }
